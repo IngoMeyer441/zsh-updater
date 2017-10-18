@@ -1,10 +1,24 @@
 export UPDATER_ROOT_DIR="${0:h}"
 
 function update-all () (
-    export UPDATER_SCRIPTS_DIR="${UPDATER_ROOT_DIR}/update_scripts"
-    export UPDATE_ORDER_PATH="${UPDATER_SCRIPTS_DIR}/update_order"
+    function init_variables () {
+        export UPDATER_SCRIPTS_DIR="${UPDATER_ROOT_DIR}/update_scripts"
+        export UPDATE_ORDER_PATH="${UPDATER_SCRIPTS_DIR}/update_order"
+        if [[ "$(uname)" == "Darwin" ]]; then
+            export PLATFORM_MACOS=1
+            export PLATFORM_LINUX=0
+        else
+            export PLATFORM_MACOS=0
+            export PLATFORM_LINUX=1
+        fi
+        if (( ${PLATFORM_LINUX} )); then
+            export PLATFORM_LINUX_DISTRO="unknown"
+            [[ -f "/etc/debian_version" ]] && export PLATFORM_LINUX_DISTRO="debian"
+            [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="centos"
+        fi
 
-    source "${UPDATER_ROOT_DIR}/utils/utils.zsh"
+        source "${UPDATER_ROOT_DIR}/utils/utils.zsh"
+    }
 
     function update_updater_scripts () {
         if [[ "${UPDATER_SCRIPTS_REPO_URL}" == "" ]]; then
@@ -55,6 +69,7 @@ function update-all () (
         exit "${RET}"
     )
 
+    init_variables
     update_updater_scripts
     read_update_order
     for UPDATE_SCRIPT in "${UPDATE_ORDER[@]}"; do
