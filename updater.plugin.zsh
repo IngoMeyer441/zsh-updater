@@ -53,7 +53,7 @@ function update-all () (
         export UPDATE_TEMP="$(mktemp -d)"
         (
             update_description
-            if update_condition; then
+            if ! is_function "update_condition" || update_condition; then
                 print_update "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
                 cd "${UPDATE_TEMP}" && update_run
                 RET="$?"

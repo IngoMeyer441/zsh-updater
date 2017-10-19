@@ -23,4 +23,8 @@ function print_subtarget () {
     printf -- "[${BOLD_LIGHT_MAGENTA}SUBTARGET${NC}] ${BOLD_LIGHT_CYAN}%s... %s${NC}\n" "$1" "$2"
 }
 
+function is_function () {
+    declare -f "$1" >/dev/null
+}
+
 # vim: ft=zsh:tw=120
