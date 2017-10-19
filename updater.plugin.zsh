@@ -26,6 +26,7 @@ function update-all () (
             exit 101
         fi
 
+        print_update "update scripts"
         if [[ "$(cd ${UPDATER_SCRIPTS_DIR} 2>/dev/null && git remote get-url origin)" == "${UPDATER_SCRIPTS_REPO_URL}" ]]; then
             pushd "${UPDATER_SCRIPTS_DIR}" && \
             git fetch origin && \
