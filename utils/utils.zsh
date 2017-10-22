@@ -27,4 +27,8 @@ function is_function () {
     declare -f "$1" >/dev/null
 }
 
+function last_git_tag () {
+    "${UPDATER_UTILS_DIR}/utils.py" --last-git-tag "$1"
+}
+
 # vim: ft=zsh:tw=120
