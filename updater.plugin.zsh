@@ -3,6 +3,7 @@ export UPDATER_ROOT_DIR="${0:h}"
 function update-all () (
     function init_variables () {
         export UPDATER_SCRIPTS_DIR="${UPDATER_ROOT_DIR}/update_scripts"
+        export UPDATER_UTILS_DIR="${UPDATER_ROOT_DIR}/utils"
         export UPDATE_ORDER_PATH="${UPDATER_SCRIPTS_DIR}/update_order"
         if [[ "$(uname)" == "Darwin" ]]; then
             export PLATFORM_MACOS=1
@@ -17,7 +18,7 @@ function update-all () (
             [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="centos"
         fi
 
-        source "${UPDATER_ROOT_DIR}/utils/utils.zsh"
+        source "${UPDATER_UTILS_DIR}/utils.zsh"
     }
 
     function update_updater_scripts () {
