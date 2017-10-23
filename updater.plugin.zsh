@@ -18,7 +18,7 @@ function update-all () (
             [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="centos"
         fi
 
-        source "${UPDATER_UTILS_DIR}/utils.zsh"
+        source "${UPDATER_UTILS_DIR}/update_utils.zsh"
     }
 
     function update_updater_scripts () {
