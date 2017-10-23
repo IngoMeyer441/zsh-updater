@@ -31,4 +31,8 @@ function last_git_tag () {
     "${UPDATER_UTILS_DIR}/update_utils.py" --last-git-tag "$1"
 }
 
+function last_website_version () {
+    "${UPDATER_UTILS_DIR}/update_utils.py" --last-website-version "$(IFS=, ; echo "$*")"
+}
+
 # vim: ft=zsh:tw=120
