@@ -58,7 +58,7 @@ except ImportError:
         return collections.namedtuple(name, fields)
 
 PY2 = (sys.version_info.major < 3)  # is needed for correct mypy checking
-DEFAULT_VERSION_PATTERN = r'(\d+)\.(\d+)(?:\.(\d+))?'
+DEFAULT_VERSION_PATTERN = r'[vV]?(\d+)\.(\d+)(?:\.(\d+))?'
 MAX_TRIES_FOR_PAGE_DOWNLOAD = 3
 WAIT_TIME_BETWEEN_PAGE_DOWNLOAD_TRIES = 10
 
