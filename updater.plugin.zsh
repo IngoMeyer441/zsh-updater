@@ -16,6 +16,10 @@ function update-all () (
             export PLATFORM_LINUX_DISTRO="unknown"
             [[ -f "/etc/debian_version" ]] && export PLATFORM_LINUX_DISTRO="debian"
             [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="centos"
+            if [[ "${PLATFORM_LINUX_DISTRO}" == "debian" ]]; then
+                export PLATFORM_LINUX_DISTRO_CODENAME="$(lsb_release -c | awk '{ print $2 }')"
+                export PLATFORM_LINUX_DISTRO_BRANCH="$(lsb_release -r | awk '{ print $2 }')"
+            fi
         fi
 
         source "${UPDATER_UTILS_DIR}/update_utils.zsh"
