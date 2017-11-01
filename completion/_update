@@ -1,0 +1,23 @@
+#compdef update
+
+function _update {
+    local UPDATE_ORDER_PATH UPDATE_SCRIPT UPDATE_SCRIPTS UPDATE_SCRIPTS_WITHOUT_EXT
+    UPDATE_ORDER_PATH="${UPDATER_ROOT_DIR}/update_scripts/update_order"
+    if [ -f "${UPDATE_ORDER_PATH}" ]; then
+        UPDATE_SCRIPTS=( "${(f)$(<${UPDATE_ORDER_PATH})}" )
+        UPDATE_SCRIPTS_WITHOUT_EXT=()
+        for UPDATE_SCRIPT in "${UPDATE_SCRIPTS[@]}"; do
+            UPDATE_SCRIPTS_WITHOUT_EXT+=( "${UPDATE_SCRIPT:r}" )
+        done
+
+    else
+        UPDATE_SCRIPTS=()
+        UPDATE_SCRIPTS_WITHOUT_EXT=()
+    fi
+
+    _arguments '*:update scripts:(${UPDATE_SCRIPTS_WITHOUT_EXT})'
+
+    return
+}
+
+_update "@"
