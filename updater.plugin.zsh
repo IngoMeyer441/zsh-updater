@@ -1,4 +1,5 @@
 export UPDATER_ROOT_DIR="${0:h}"
+fpath+="${UPDATER_ROOT_DIR}/completion"
 
 function update () (
     function init_variables () {
