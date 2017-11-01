@@ -1,6 +1,6 @@
 export UPDATER_ROOT_DIR="${0:h}"
 
-function update-all () (
+function update () (
     function init_variables () {
         export UPDATER_SCRIPTS_DIR="${UPDATER_ROOT_DIR}/update_scripts"
         export UPDATER_UTILS_DIR="${UPDATER_ROOT_DIR}/utils"
@@ -77,12 +77,23 @@ function update-all () (
 
     init_variables
     update_updater_scripts
-    read_update_order
+    if [[ "$1" == "all" ]]; then
+        read_update_order
+    else
+        UPDATE_ORDER=()
+        for ENTRY in "$@"; do
+            UPDATE_ORDER+=( "${ENTRY}.zsh" )
+        done
+    fi
     for UPDATE_SCRIPT in "${UPDATE_ORDER[@]}"; do
         run_update_script "${UPDATE_SCRIPT}"
         RET="$?"
         [[ "${RET}" -ne 0 ]] && exit "${RET}"
     done
 )
+
+function update-all () {
+    update all
+}
 
 # vim: ft=zsh:tw=120
