@@ -33,7 +33,7 @@ function update () (
         fi
 
         print_update "update scripts"
-        if [[ "$(cd ${UPDATER_SCRIPTS_DIR} 2>/dev/null && git remote get-url origin)" == "${UPDATER_SCRIPTS_REPO_URL}" ]]; then
+        if [[ "$(cd ${UPDATER_SCRIPTS_DIR} 2>/dev/null && git remote -v | awk '$1 == "origin" && $3 == "(fetch)" { print $2 }')" == "${UPDATER_SCRIPTS_REPO_URL}" ]]; then
             pushd "${UPDATER_SCRIPTS_DIR}" && \
             git fetch origin && \
             [[ "$(git rev-list --count master...origin/master)" -gt 0 ]] && \
