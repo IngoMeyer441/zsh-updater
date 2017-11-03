@@ -18,11 +18,11 @@ from pyquery import PyQuery
 try:
     import typing  # noqa: F401  # pylint: disable=unused-import
     from typing import (  # noqa: F401  # pylint: disable=unused-import
-        cast, Any, AnyStr, Callable, Dict, Iterable, IO, List, Match, NamedTuple, Optional, Text, Tuple, Union
+        cast, Any, AnyStr, Callable, Dict, Iterable, IO, Iterator, List, Match, NamedTuple, Optional, Text, Tuple, Union
     )
 except ImportError:
-    class CallableDummyClass(object):
-        """Dummy class that prevents code breaking for ``Callable`` casts if the ``typing`` module is not available."""
+    class TypeDummyClass(object):
+        """Dummy class that prevents code breaking for ``Type`` casts if the ``typing`` module is not available."""
 
         def __getitem__(self, item):
             # type: (str) -> None
@@ -46,7 +46,8 @@ except ImportError:
 
     cast = lambda t, x: x  # type: ignore  # noqa: E731
     AnyStr = None  # type: ignore
-    Callable = CallableDummyClass()  # type: ignore
+    Callable = TypeDummyClass()  # type: ignore
+    Union = TypeDummyClass()  # type: ignore
 
     def NamedTuple(name, fields_with_types):  # type: ignore
         """Create a named tuple without type information.
@@ -66,7 +67,7 @@ VersionMatch = NamedTuple('VersionMatch', [('complete_match', Text), ('groups', 
 
 
 def default_sort_key(elem):
-    # type: (VersionMatch) -> Tuple[int, ...]
+    # type: (VersionMatch) -> Tuple[Union[int, Text], ...]
     """Transform version strings to int tuples for better comparison.
 
     The function handles version strings of the type ``major.minor(.revision)``.
@@ -74,11 +75,11 @@ def default_sort_key(elem):
     :param elem: version string
     :type elem: VersionMatch
     :returns: version int tuple
-    :rtype: Tuple[int, ...]
+    :rtype: Tuple[Union[int, Text], ...]
 
     """
-    version_components = (c for c in elem.groups if c is not None)
-    return tuple(int(c) for c in version_components)
+    version_components = (c for c in elem.groups if c is not None)  # type: Iterator[Text]
+    return tuple(cast(Union[int, Text], int(c) if c.isdigit() else c) for c in version_components)
 
 
 class InvalidArgumentCount(Exception):
@@ -247,8 +248,8 @@ argument_to_function = {
 }  # type: Dict[Text, Callable[[Text], Text]]
 
 argument_to_value_count_range = {
-    'last_git_tag': (1, 1),
-    'last_website_version': (2, 3)
+    'last_git_tag': (1, 2),
+    'last_website_version': (2, 4)
 }  # type: Dict[Text, Tuple[int, int]]
 
 

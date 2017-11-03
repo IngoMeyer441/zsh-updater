@@ -28,7 +28,7 @@ function is_function () {
 }
 
 function last_git_tag () {
-    "${UPDATER_UTILS_DIR}/update_utils.py" --last-git-tag "$1"
+    "${UPDATER_UTILS_DIR}/update_utils.py" --last-git-tag "$(IFS=, ; echo "$*")"
 }
 
 function last_website_version () {
