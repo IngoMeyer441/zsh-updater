@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import argparse
 import collections
+import os
 import re
 import requests
 import subprocess
@@ -18,11 +19,11 @@ from pyquery import PyQuery
 try:
     import typing  # noqa: F401  # pylint: disable=unused-import
     from typing import (  # noqa: F401  # pylint: disable=unused-import
-        cast, Any, AnyStr, Callable, Dict, Iterable, IO, List, Match, NamedTuple, Optional, Text, Tuple, Union
+        cast, Any, AnyStr, Callable, Dict, Iterable, IO, Iterator, List, Match, NamedTuple, Optional, Text, Tuple, Union
     )
 except ImportError:
-    class CallableDummyClass(object):
-        """Dummy class that prevents code breaking for ``Callable`` casts if the ``typing`` module is not available."""
+    class TypeDummyClass(object):
+        """Dummy class that prevents code breaking for ``Type`` casts if the ``typing`` module is not available."""
 
         def __getitem__(self, item):
             # type: (str) -> None
@@ -46,7 +47,8 @@ except ImportError:
 
     cast = lambda t, x: x  # type: ignore  # noqa: E731
     AnyStr = None  # type: ignore
-    Callable = CallableDummyClass()  # type: ignore
+    Callable = TypeDummyClass()  # type: ignore
+    Union = TypeDummyClass()  # type: ignore
 
     def NamedTuple(name, fields_with_types):  # type: ignore
         """Create a named tuple without type information.
@@ -61,12 +63,13 @@ PY2 = (sys.version_info.major < 3)  # is needed for correct mypy checking
 DEFAULT_VERSION_PATTERN = r'[vV]?(\d+)\.(\d+)(?:\.(\d+))?$'
 MAX_TRIES_FOR_PAGE_DOWNLOAD = 3
 WAIT_TIME_BETWEEN_PAGE_DOWNLOAD_TRIES = 10
+KNOWN_FILE_EXTENSIONS = ('gzip', 'tar', 'tgz', 'tar.gz', 'tar.bz2', 'tar.xz', 'zip')
 
 VersionMatch = NamedTuple('VersionMatch', [('complete_match', Text), ('groups', Iterable[Text])])
 
 
 def default_sort_key(elem):
-    # type: (VersionMatch) -> Tuple[int, ...]
+    # type: (VersionMatch) -> Tuple[Union[int, Text], ...]
     """Transform version strings to int tuples for better comparison.
 
     The function handles version strings of the type ``major.minor(.revision)``.
@@ -74,11 +77,11 @@ def default_sort_key(elem):
     :param elem: version string
     :type elem: VersionMatch
     :returns: version int tuple
-    :rtype: Tuple[int, ...]
+    :rtype: Tuple[Union[int, Text], ...]
 
     """
-    version_components = (c for c in elem.groups if c is not None)
-    return tuple(int(c) for c in version_components)
+    version_components = (c for c in elem.groups if c is not None)  # type: Iterator[Text]
+    return tuple(cast(Union[int, Text], int(c) if c.isdigit() else c) for c in version_components)
 
 
 class InvalidArgumentCount(Exception):
@@ -208,6 +211,26 @@ class VersionQuery(object):
         :rtype: Optional[Text]
 
         """
+        def remove_path_components(filepath):
+            # type: (Text) -> Text
+            """Extract the last path component and remove the file extension.
+
+            Only known file extensions are removed.
+
+            :param filepath: filepath that shall be reduced.
+            :type filepath: Text
+            :returns: Returns the extracted filename without known file extension.
+            :rtype: Text
+
+            """
+            basename = os.path.basename(filepath)
+            basename_without_extension = None  # type: Optional[Text]
+            for file_extension in KNOWN_FILE_EXTENSIONS:
+                if basename.endswith('.{}'.format(file_extension)):
+                    basename_without_extension = basename[:-(len(file_extension) + 1)]
+                    break
+            return basename_without_extension if basename_without_extension is not None else basename
+
         attribute = optional_attribute
         if optional_version_pattern is not None:
             version_pattern = optional_version_pattern
@@ -232,7 +255,8 @@ class VersionQuery(object):
             version_texts = [html_tag.text for html_tag in version_html_tags_pq]
         filtered_versions = []  # type: List[VersionMatch]
         for version_text in version_texts:
-            match_obj = re.search(version_pattern, version_text)
+            # assume that ``version_text`` can be a path (or url)
+            match_obj = re.search(version_pattern, remove_path_components(version_text))
             if match_obj:
                 filtered_versions.append(VersionMatch(match_obj.group(), match_obj.groups()))
         if filtered_versions:
@@ -247,8 +271,8 @@ argument_to_function = {
 }  # type: Dict[Text, Callable[[Text], Text]]
 
 argument_to_value_count_range = {
-    'last_git_tag': (1, 1),
-    'last_website_version': (2, 3)
+    'last_git_tag': (1, 2),
+    'last_website_version': (2, 4)
 }  # type: Dict[Text, Tuple[int, int]]
 
 
