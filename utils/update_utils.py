@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import argparse
 import collections
+import os
 import re
 import requests
 import subprocess
@@ -62,6 +63,7 @@ PY2 = (sys.version_info.major < 3)  # is needed for correct mypy checking
 DEFAULT_VERSION_PATTERN = r'[vV]?(\d+)\.(\d+)(?:\.(\d+))?$'
 MAX_TRIES_FOR_PAGE_DOWNLOAD = 3
 WAIT_TIME_BETWEEN_PAGE_DOWNLOAD_TRIES = 10
+KNOWN_FILE_EXTENSIONS = ('gzip', 'tar', 'tgz', 'tar.gz', 'tar.bz2', 'tar.xz', 'zip')
 
 VersionMatch = NamedTuple('VersionMatch', [('complete_match', Text), ('groups', Iterable[Text])])
 
@@ -209,6 +211,26 @@ class VersionQuery(object):
         :rtype: Optional[Text]
 
         """
+        def remove_path_components(filepath):
+            # type: (Text) -> Text
+            """Extract the last path component and remove the file extension.
+
+            Only known file extensions are removed.
+
+            :param filepath: filepath that shall be reduced.
+            :type filepath: Text
+            :returns: Returns the extracted filename without known file extension.
+            :rtype: Text
+
+            """
+            basename = os.path.basename(filepath)
+            basename_without_extension = None  # type: Optional[Text]
+            for file_extension in KNOWN_FILE_EXTENSIONS:
+                if basename.endswith('.{}'.format(file_extension)):
+                    basename_without_extension = basename[:-(len(file_extension) + 1)]
+                    break
+            return basename_without_extension if basename_without_extension is not None else basename
+
         attribute = optional_attribute
         if optional_version_pattern is not None:
             version_pattern = optional_version_pattern
@@ -233,7 +255,8 @@ class VersionQuery(object):
             version_texts = [html_tag.text for html_tag in version_html_tags_pq]
         filtered_versions = []  # type: List[VersionMatch]
         for version_text in version_texts:
-            match_obj = re.search(version_pattern, version_text)
+            # assume that ``version_text`` can be a path (or url)
+            match_obj = re.search(version_pattern, remove_path_components(version_text))
             if match_obj:
                 filtered_versions.append(VersionMatch(match_obj.group(), match_obj.groups()))
         if filtered_versions:
