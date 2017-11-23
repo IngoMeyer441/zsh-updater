@@ -48,6 +48,8 @@ except ImportError:
     cast = lambda t, x: x  # type: ignore  # noqa: E731
     AnyStr = None  # type: ignore
     Callable = TypeDummyClass()  # type: ignore
+    Iterable = TypeDummyClass()  # type: ignore
+    Text = unicode if sys.version_info.major < 3 else str  # type: ignore
     Union = TypeDummyClass()  # type: ignore
 
     def NamedTuple(name, fields_with_types):  # type: ignore
