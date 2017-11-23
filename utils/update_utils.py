@@ -323,7 +323,7 @@ def parse_arguments():
     for key, value_string in vars(parser.parse_args()).items():
         if value_string is None:
             continue
-        values = tuple(value_string.split(','))
+        values = tuple(value if value != '' else None for value in value_string.split(','))
         value_range = argument_to_value_count_range[key]
         if value_range[0] <= len(values) <= value_range[1]:
             args[key] = values
