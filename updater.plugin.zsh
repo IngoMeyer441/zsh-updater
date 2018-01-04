@@ -40,6 +40,7 @@ function update () (
             git reset --hard origin/master && \
             popd
         else
+            rm -rf "${UPDATER_SCRIPTS_DIR}"
             git clone "${UPDATER_SCRIPTS_REPO_URL}" "${UPDATER_SCRIPTS_DIR}"
         fi
     }
