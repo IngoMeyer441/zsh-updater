@@ -6,6 +6,8 @@ function update () (
         export UPDATER_SCRIPTS_DIR="${UPDATER_ROOT_DIR}/update_scripts"
         export UPDATER_UTILS_DIR="${UPDATER_ROOT_DIR}/utils"
         export UPDATE_ORDER_PATH="${UPDATER_SCRIPTS_DIR}/update_order"
+        export UPDATE_EXTRA_DEFINITIONS="${UPDATER_SCRIPTS_DIR}/extra_definitions.zsh"
+        [[ -f "${UPDATE_EXTRA_DEFINITIONS}" ]] || export UPDATE_EXTRA_DEFINITIONS=""
         if [[ "$(uname)" == "Darwin" ]]; then
             export PLATFORM_MACOS=1
             export PLATFORM_LINUX=0
@@ -24,6 +26,7 @@ function update () (
         fi
 
         source "${UPDATER_UTILS_DIR}/update_utils.zsh"
+        [[ -n "${UPDATE_EXTRA_DEFINITIONS}" ]] && source "${UPDATE_EXTRA_DEFINITIONS}"
     }
 
     function update_updater_scripts () {
