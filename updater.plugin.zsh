@@ -17,12 +17,21 @@ function update () (
         fi
         if (( ${PLATFORM_LINUX} )); then
             export PLATFORM_LINUX_DISTRO="unknown"
-            [[ -f "/etc/debian_version" ]] && export PLATFORM_LINUX_DISTRO="debian"
             [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="centos"
-            if [[ "${PLATFORM_LINUX_DISTRO}" == "debian" ]]; then
-                export PLATFORM_LINUX_DISTRO_CODENAME="$(lsb_release -c | awk '{ print $2 }')"
-                export PLATFORM_LINUX_DISTRO_BRANCH="$(lsb_release -r | awk '{ print $2 }')"
-            fi
+            [[ -f "/etc/debian_version" ]] && export PLATFORM_LINUX_DISTRO="debian"
+            case "${PLATFORM_LINUX_DISTRO}" in
+                centos)
+                    export PLATFORM_LINUX_DISTRO_VERSION="$(lsb_release -r | awk '{ print $2 }')"
+                    export PLATFORM_LINUX_DISTRO_MAJOR_VERSION=\
+                        "$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
+                    ;;
+                debian)
+                    export PLATFORM_LINUX_DISTRO_CODENAME="$(lsb_release -c | awk '{ print $2 }')"
+                    export PLATFORM_LINUX_DISTRO_BRANCH="$(lsb_release -r | awk '{ print $2 }')"
+                    ;;
+                *)
+                    ;;
+            esac
         fi
 
         source "${UPDATER_UTILS_DIR}/update_utils.zsh"
