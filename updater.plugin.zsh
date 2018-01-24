@@ -113,6 +113,7 @@ function update () (
     for UPDATE_SCRIPT in "${UPDATE_ORDER[@]}"; do
         run_update_script "${UPDATE_SCRIPT}"
         RET="$?"
+        rehash  # rebuild PATH cache
         [[ "${RET}" -ne 0 ]] && exit "${RET}"
     done
 )
