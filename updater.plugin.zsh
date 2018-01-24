@@ -23,8 +23,7 @@ function update () (
                 centos)
                     if which lsb_release >/dev/null 2>&1; then
                         export PLATFORM_LINUX_DISTRO_VERSION="$(lsb_release -r | awk '{ print $2 }')"
-                        export PLATFORM_LINUX_DISTRO_MAJOR_VERSION=\
-                            "$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
+                        export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
                     else
                         export PLATFORM_LINUX_DISTRO_VERSION="$(sed 's/[^0-9.]*//g' /etc/redhat-release)"
                         if [[ "${CENTOS_VERSION}" > "7" ]]; then
