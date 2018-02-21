@@ -35,4 +35,20 @@ function last_website_version () {
     "${UPDATER_UTILS_DIR}/update_utils.py" --last-website-version "$(IFS=, ; echo "$*")"
 }
 
+function create_version_script () {
+    local SCRIPT_PATH="$1"
+    local LATEST_VERSION="$2"
+
+    cat <<-EOF > "${SCRIPT_PATH}"
+		#!/bin/bash
+		print_version () {
+		    local VERSION="${LATEST_VERSION}"
+		    echo "\${VERSION}"
+		}
+		print_version
+	EOF
+    [[ "$?" -eq 0 ]] || return 1
+    chmod +x "${SCRIPT_PATH}"
+}
+
 # vim: ft=zsh:tw=120
