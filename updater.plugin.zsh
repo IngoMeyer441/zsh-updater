@@ -26,9 +26,9 @@ function update () (
                         export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
                     else
                         export PLATFORM_LINUX_DISTRO_VERSION="$(sed 's/[^0-9.]*//g' /etc/redhat-release)"
-                        if [[ "${CENTOS_VERSION}" > "7" ]]; then
+                        if [[ "${PLATFORM_LINUX_DISTRO_VERSION}" > "7" ]]; then
                             export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="7"
-                        elif [[ "${CENTOS_VERSION}" > "6" ]]; then
+                        elif [[ "${PLATFORM_LINUX_DISTRO_VERSION}" > "6" ]]; then
                             export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="6"
                         else
                             export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="5"
