@@ -115,8 +115,7 @@ function update () (
         rehash  # rebuild PATH cache
         [[ "${RET}" -ne 0 ]] && exit "${RET}"
     done
-
-    return 0
+    print_summary
 )
 
 function update-all () {
