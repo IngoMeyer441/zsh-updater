@@ -19,6 +19,11 @@ function update () (
             export PLATFORM_LINUX_DISTRO="unknown"
             [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="centos"
             [[ -f "/etc/debian_version" ]] && export PLATFORM_LINUX_DISTRO="debian"
+            if uname -a | grep -q "Microsoft"; then
+                export PLATFORM_LINUX_WSL=1
+            else
+                export PLATFORM_LINUX_WSL=0
+            fi
             case "${PLATFORM_LINUX_DISTRO}" in
                 centos)
                     if which lsb_release >/dev/null 2>&1; then
