@@ -86,6 +86,53 @@ def default_sort_key(elem):
     return tuple(cast(Union[int, Text], int(c) if c.isdigit() else c) for c in version_components)
 
 
+def url_verifier(key_func, url_to_verify):
+    # type: (Callable[[VersionMatch], Any], Text) -> Callable[[VersionMatch], Any]
+    """Verify VersionMatch objects by a given url.
+
+    This function takes a key function :code:`key_func` and returns a modified key function that filters elements which
+    cannot be verified by a given url. This is useful to filter all versions without a release tarball.
+
+    :param key_func: key func to modify
+    :type key_func: Callable[[VersionMatch], Any]
+    :param url_to_verify: url to use for the filter process. The url must contain a placeholder ``{}`` for the currently
+                          filtered version string. The parentheses can contain an optional expression to manipulate the
+                          version string (:code:`x` is the version string placeholder). For example, the expression
+                          :code:`x[1:]` would discard the first character of each version string.
+    :type url_to_verify: Text
+    :returns: returns a new key function that will return ``False`` if the url cannot be verified and the return value
+              of the original :code:`key_func` otherwise.
+    :rtype: Callable[[VersionMatch],
+
+    """
+    match_obj = re.search(r"\{(.+)\}", url_to_verify)
+    if match_obj is not None:
+        filter_func = eval("lambda x: {}".format(match_obj.group(1)))
+    else:
+        filter_func = lambda x: x
+    url_to_verify = re.sub(r"\{(.+)\}", "{}", url_to_verify)
+
+    def modified_key_func(elem):
+        # type: (VersionMatch) -> Any
+        """Return a modified version of the given key function :code:`key_func`.
+
+        :param elem: a ``VersionMatch`` object to verfiy
+        :type elem: VersionMatch
+        :returns: ``False`` if the url cannot be verified and the return value of the original :code:`key_func`
+                  otherwise.
+        :rtype: Any
+
+        """
+        url = url_to_verify.format(filter_func(elem.complete_match))
+        response = requests.head(url)
+        if response.status_code == 200:
+            return key_func(elem)
+        else:
+            return False
+
+    return modified_key_func
+
+
 class InvalidArgumentCount(Exception):
     """Exception that is raisd on an invalid argument count."""
 
@@ -145,8 +192,8 @@ class VersionQuery(object):
     """
 
     @classmethod
-    def last_git_tag(cls, repo_url, optional_tag_pattern=None, optional_sort_key=None):
-        # type: (Text, Optional[Text], Optional[Callable[[VersionMatch], Any]]) -> Optional[Text]
+    def last_git_tag(cls, repo_url, optional_tag_pattern=None, url_to_verify=None, optional_sort_key=None):
+        # type: (Text, Optional[Text], Optional[Text], Optional[Callable[[VersionMatch], Any]]) -> Optional[Text]
         """Find the latest version by parsing tags of a given repository url.
 
         Only tags of the given pattern are considered. The chronological tag history is ignored; instead the latest tag
@@ -158,6 +205,10 @@ class VersionQuery(object):
         :param optional_tag_pattern: pattern of tags to be considered; by default ``major.minor(.revision)`` version
                                      numbers are matched
         :type optional_tag_pattern: Optional[Callable[[VersionMatch], Any]]
+        :param url_to_verify: url that be can used to verify the latest tag (could be an url to a tarball download). The
+                              string must contain a ``{}`` format specifier as a placeholder for the found version
+                              number.
+        :type url_to_verify: Optional[Text]
         :param optional_sort_key: ``key`` function that is passed to Python's ``max`` to determine the latest version
                                   number
         :type optional_sort_key: Optional[Callable[[VersionMatch], Any]]
@@ -173,6 +224,8 @@ class VersionQuery(object):
             sort_key = optional_sort_key
         else:
             sort_key = default_sort_key
+        if url_to_verify is not None:
+            sort_key = url_verifier(sort_key, url_to_verify)
         search_pattern = 'refs/tags/{}'.format(tag_pattern)
         all_tags = subprocess.check_output(('git', 'ls-remote', '--tags', repo_url)).splitlines()
         filtered_tags = []  # type: List[VersionMatch]
@@ -273,7 +326,7 @@ argument_to_function = {
 }  # type: Dict[Text, Callable[[Text], Text]]
 
 argument_to_value_count_range = {
-    'last_git_tag': (1, 2),
+    'last_git_tag': (1, 3),
     'last_website_version': (2, 4)
 }  # type: Dict[Text, Tuple[int, int]]
 
