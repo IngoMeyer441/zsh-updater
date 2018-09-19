@@ -2,6 +2,38 @@
 
 export UPDATER_ROOT_DIR="${0:h}"
 
+
+function print_usage () {
+    echo "Usage: update [-a] script1 [script2 ... scriptN]"
+    echo
+    echo "Run the specified update scripts. The special name 'all' runs all available scripts."
+    echo
+    echo "positional arguments:"
+    echo "  script1   The script name(s) to run"
+    echo
+    echo "optional arguments:"
+    echo "  -a   abort if a script fails"
+}
+
+function read_options () {
+    ABORT_ON_FAIL=0
+    while getopts ":a" opt; do
+        case ${opt} in
+            a)
+                ABORT_ON_FAIL=1
+                ;;
+            \?)
+                >&2 echo "Invalid option: '-${OPTARG}'"
+                ;&
+            *)
+                print_usage
+                exit 1
+                ;;
+        esac
+    done
+    COUNT_OPTIONAL_PARAMETERS="$(( OPTIND - 1 ))"
+}
+
 function init_variables () {
     export UPDATER_RC_PATH="${HOME}/.zsh-updaterrc"
     export UPDATER_SCRIPTS_DIR="${UPDATER_ROOT_DIR}/update_scripts"
@@ -95,7 +127,7 @@ function run_update_script () (
             print_update "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
             cd "${UPDATE_TEMP}" && update_run
             RET="$?"
-            [[ "${RET}" -ne 0 ]] && print_abort "${UPDATE_RUN_OUTPUT}"
+            [[ "${RET}" -ne 0 ]] && print_abort "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_RUN_OUTPUT}"
             exit "${RET}"
         else
             print_skip "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
@@ -108,6 +140,8 @@ function run_update_script () (
 )
 
 function main () {
+    read_options "$@"
+    shift "${COUNT_OPTIONAL_PARAMETERS}"
     init_variables
     update_updater_scripts
     if [[ "$1" == "all" ]]; then
@@ -122,7 +156,9 @@ function main () {
         run_update_script "${UPDATE_SCRIPT}"
         RET="$?"
         rehash  # rebuild PATH cache
-        [[ "${RET}" -ne 0 ]] && exit "${RET}"
+        if [[ "${RET}" -ne 0 ]] && (( ABORT_ON_FAIL )); then
+            exit "${RET}"
+        fi
     done
     print_summary
 }
