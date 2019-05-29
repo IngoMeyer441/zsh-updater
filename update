@@ -76,6 +76,9 @@ function init_variables () {
             debian)
                 export PLATFORM_LINUX_DISTRO_CODENAME="$(lsb_release -c | awk '{ print $2 }')"
                 export PLATFORM_LINUX_DISTRO_BRANCH="$(lsb_release -r | awk '{ print $2 }')"
+                if [[ "${PLATFORM_LINUX_DISTRO_BRANCH}" == "10" ]]; then
+                    export PLATFORM_LINUX_DISTRO_BRANCH="testing"
+                fi
                 ;;
             *)
                 ;;
