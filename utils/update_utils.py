@@ -16,12 +16,28 @@ import subprocess
 import sys
 import time
 from pyquery import PyQuery
+
 try:
     import typing  # noqa: F401  # pylint: disable=unused-import
     from typing import (  # noqa: F401  # pylint: disable=unused-import
-        cast, Any, AnyStr, Callable, Dict, Iterable, IO, Iterator, List, Match, NamedTuple, Optional, Text, Tuple, Union
+        cast,
+        Any,
+        AnyStr,
+        Callable,
+        Dict,
+        Iterable,
+        IO,
+        Iterator,
+        List,
+        Match,
+        NamedTuple,
+        Optional,
+        Text,
+        Tuple,
+        Union,
     )
 except ImportError:
+
     class TypeDummyClass(object):
         """Dummy class that prevents code breaking for ``Type`` casts if the ``typing`` module is not available."""
 
@@ -61,13 +77,14 @@ except ImportError:
         fields = zip(*fields_with_types)[0]
         return collections.namedtuple(name, fields)
 
-PY2 = (sys.version_info.major < 3)  # is needed for correct mypy checking
-DEFAULT_VERSION_PATTERN = r'[vV]?(\d+)\.(\d+)(?:\.(\d+))?$'
+
+PY2 = sys.version_info.major < 3  # is needed for correct mypy checking
+DEFAULT_VERSION_PATTERN = r"[vV]?(\d+)\.(\d+)(?:\.(\d+))?$"
 MAX_TRIES_FOR_PAGE_DOWNLOAD = 3
 WAIT_TIME_BETWEEN_PAGE_DOWNLOAD_TRIES = 10
-KNOWN_FILE_EXTENSIONS = ('gzip', 'tar', 'tgz', 'tar.gz', 'tar.bz2', 'tar.xz', 'zip')
+KNOWN_FILE_EXTENSIONS = ("gzip", "tar", "tgz", "tar.gz", "tar.bz2", "tar.xz", "zip")
 
-VersionMatch = NamedTuple('VersionMatch', [('complete_match', Text), ('groups', Iterable[Text])])
+VersionMatch = NamedTuple("VersionMatch", [("complete_match", Text), ("groups", Iterable[Text])])
 
 
 def default_sort_key(elem):
@@ -226,13 +243,13 @@ class VersionQuery(object):
             sort_key = default_sort_key
         if url_to_verify is not None:
             sort_key = url_verifier(sort_key, url_to_verify)
-        search_pattern = 'refs/tags/{}'.format(tag_pattern)
-        all_tags = subprocess.check_output(('git', 'ls-remote', '--tags', repo_url)).splitlines()
+        search_pattern = "refs/tags/{}".format(tag_pattern)
+        all_tags = subprocess.check_output(("git", "ls-remote", "--tags", repo_url)).splitlines()
         filtered_tags = []  # type: List[VersionMatch]
         for tag in all_tags:
             match_obj = re.search(search_pattern, tag)
             if match_obj:
-                filtered_tags.append(VersionMatch(match_obj.group()[len('refs/tags/'):], match_obj.groups()))
+                filtered_tags.append(VersionMatch(match_obj.group()[len("refs/tags/") :], match_obj.groups()))
         if filtered_tags:
             last_tag = max(filtered_tags, key=sort_key)
             return last_tag.complete_match
@@ -266,6 +283,7 @@ class VersionQuery(object):
         :rtype: Optional[Text]
 
         """
+
         def remove_path_components(filepath):
             # type: (Text) -> Text
             """Extract the last path component and remove the file extension.
@@ -281,8 +299,8 @@ class VersionQuery(object):
             basename = os.path.basename(filepath)
             basename_without_extension = None  # type: Optional[Text]
             for file_extension in KNOWN_FILE_EXTENSIONS:
-                if basename.endswith('.{}'.format(file_extension)):
-                    basename_without_extension = basename[:-(len(file_extension) + 1)]
+                if basename.endswith(".{}".format(file_extension)):
+                    basename_without_extension = basename[: -(len(file_extension) + 1)]
                     break
             return basename_without_extension if basename_without_extension is not None else basename
 
@@ -301,7 +319,7 @@ class VersionQuery(object):
                 break
             time.sleep(WAIT_TIME_BETWEEN_PAGE_DOWNLOAD_TRIES)
         else:
-            raise requests.exceptions.HTTPError('{} could not be downloaded'.format(website_url))
+            raise requests.exceptions.HTTPError("{} could not be downloaded".format(website_url))
         response_pq = PyQuery(response.text)
         version_html_tags_pq = response_pq.find(selector)
         if attribute is not None:
@@ -321,13 +339,13 @@ class VersionQuery(object):
 
 
 argument_to_function = {
-    'last_git_tag': cast(Callable[[Text], Text], VersionQuery.last_git_tag),
-    'last_website_version': cast(Callable[[Text], Text], VersionQuery.last_website_version)
+    "last_git_tag": cast(Callable[[Text], Text], VersionQuery.last_git_tag),
+    "last_website_version": cast(Callable[[Text], Text], VersionQuery.last_website_version),
 }  # type: Dict[Text, Callable[[Text], Text]]
 
 argument_to_value_count_range = {
-    'last_git_tag': (1, 3),
-    'last_website_version': (2, 4)
+    "last_git_tag": (1, 3),
+    "last_website_version": (2, 4),
 }  # type: Dict[Text, Tuple[int, int]]
 
 
@@ -341,23 +359,20 @@ def get_argumentparser():
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description='''
+        description="""
 %(prog)s is a command line utility for update scripts.
 It simplifies common tasks, for example checking for
 latest software versions from different sources.
-'''
+""",
     )
     parser.add_argument(
-        '--last-git-tag',
-        action='store',
-        dest='last_git_tag',
-        help='find the latest tagged version in a git repository'
+        "--last-git-tag", action="store", dest="last_git_tag", help="find the latest tagged version in a git repository"
     )
     parser.add_argument(
-        '--last-website-version',
-        action='store',
-        dest='last_website_version',
-        help='find the latest tagged version on a website'
+        "--last-website-version",
+        action="store",
+        dest="last_website_version",
+        help="find the latest tagged version on a website",
     )
     return parser
 
@@ -376,7 +391,7 @@ def parse_arguments():
     for key, value_string in vars(parser.parse_args()).items():
         if value_string is None:
             continue
-        values = tuple(value if value != '' else None for value in value_string.split(','))
+        values = tuple(value if value != "" else None for value in value_string.split(","))
         value_range = argument_to_value_count_range[key]
         if value_range[0] <= len(values) <= value_range[1]:
             args[key] = values
@@ -384,7 +399,7 @@ def parse_arguments():
             raise InvalidArgumentCount('{:d} argument values are invalid for "{}"'.format(len(values), key))
 
     if not any(arg in argument_to_function for arg, value in args.items()):
-        print('Error: No action given', file=sys.stderr)
+        print("Error: No action given", file=sys.stderr)
         parser.print_help(file=sys.stderr)
         sys.exit(1)
     return args
@@ -412,7 +427,7 @@ def main():
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 # vim: tw=120
