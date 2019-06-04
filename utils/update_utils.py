@@ -87,6 +87,19 @@ KNOWN_FILE_EXTENSIONS = ("gzip", "tar", "tgz", "tar.gz", "tar.bz2", "tar.xz", "z
 VersionMatch = NamedTuple("VersionMatch", [("complete_match", Text), ("groups", Iterable[Text])])
 
 
+def is_string(item):
+    # type: (Any) -> bool
+    """Check if a given item is a string.
+
+    :param item: item to check
+    :type item: Any
+    :returns: the test result
+    :rtype: bool
+
+    """
+    return isinstance(item, basestring if PY2 else str)
+
+
 def default_sort_key(elem):
     # type: (VersionMatch) -> Tuple[Union[int, Text], ...]
     """Transform version strings to int tuples for better comparison.
@@ -209,8 +222,10 @@ class VersionQuery(object):
     """
 
     @classmethod
-    def last_git_tag(cls, repo_url, optional_tag_pattern=None, url_to_verify=None, optional_sort_key=None):
-        # type: (Text, Optional[Text], Optional[Text], Optional[Callable[[VersionMatch], Any]]) -> Optional[Text]
+    def last_git_tag(
+        cls, repo_url, optional_tag_pattern=None, url_to_verify=None, optional_sort_key=None, multiple_versions=True
+    ):
+        # type: (Text, Optional[Text], Optional[Text], Optional[Callable[[VersionMatch], Any]], bool) -> Optional[List[Text]]
         """Find the latest version by parsing tags of a given repository url.
 
         Only tags of the given pattern are considered. The chronological tag history is ignored; instead the latest tag
@@ -229,8 +244,12 @@ class VersionQuery(object):
         :param optional_sort_key: ``key`` function that is passed to Python's ``max`` to determine the latest version
                                   number
         :type optional_sort_key: Optional[Callable[[VersionMatch], Any]]
-        :returns: the latest version number regarding to the given ``key`` function and that matches the given pattern
-        :rtype: Text
+        :param multiple_versions: If set to `true`, return a list with the latest three version entries instead of a
+                                  single one
+        :type multiple_versions: bool
+        :returns: the latest version number(s) regarding to the given ``key`` function and that matches the given
+                  pattern
+        :rtype: Optional[List[Text]]
 
         """
         if optional_tag_pattern is not None:
@@ -251,16 +270,26 @@ class VersionQuery(object):
             if match_obj:
                 filtered_tags.append(VersionMatch(match_obj.group()[len("refs/tags/") :], match_obj.groups()))
         if filtered_tags:
-            last_tag = max(filtered_tags, key=sort_key)
-            return last_tag.complete_match
+            if not multiple_versions:
+                last_tag = max(filtered_tags, key=sort_key)
+                return [last_tag.complete_match]
+            else:
+                last_tags = sorted(filtered_tags, key=sort_key, reverse=True)
+                return [last_tag.complete_match for last_tag in last_tags[: min(3, len(last_tags))]]
         else:
             return None
 
     @classmethod
     def last_website_version(
-        cls, website_url, selector, optional_attribute=None, optional_version_pattern=None, optional_sort_key=None
+        cls,
+        website_url,
+        selector,
+        optional_attribute=None,
+        optional_version_pattern=None,
+        optional_sort_key=None,
+        multiple_versions=False,
     ):
-        # type: (Text, Text, Optional[Text], Optional[Text], Optional[Callable[[VersionMatch], Any]]) -> Optional[Text]
+        # type: (Text, Text, Optional[Text], Optional[Text], Optional[Callable[[VersionMatch], Any]], bool) -> Optional[List[Text]]
         """Find the latest version by parsing a website.
 
         This function filters a given website by a css selector and extracts either the inner text or the an attribute
@@ -279,8 +308,11 @@ class VersionQuery(object):
         :type optional_version_pattern: Optional[Text]
         :param optional_sort_key: a filter function that is applied before the ``max`` call
         :type optional_sort_key: Optional[Callable[[VersionMatch], Any]]
-        :returns: the latest version extracted from the given website that matches all critera
-        :rtype: Optional[Text]
+        :param multiple_versions: If set to `true`, return a list with the latest three version entries instead of a
+                                  single one
+        :type multiple_versions: bool
+        :returns: the latest version(s) extracted from the given website that matches all critera
+        :rtype: Optional[List[Text]]
 
         """
 
@@ -333,8 +365,12 @@ class VersionQuery(object):
             if match_obj:
                 filtered_versions.append(VersionMatch(match_obj.group(), match_obj.groups()))
         if filtered_versions:
-            last_version = max(filtered_versions, key=sort_key)
-            return last_version.complete_match
+            if not multiple_versions:
+                last_version = max(filtered_versions, key=sort_key)
+                return [last_version.complete_match]
+            else:
+                last_versions = sorted(filtered_versions, key=sort_key, reverse=True)
+                return [last_version.complete_match for last_version in last_versions[: min(3, len(last_versions))]]
         return None
 
 
@@ -374,6 +410,12 @@ latest software versions from different sources.
         dest="last_website_version",
         help="find the latest tagged version on a website",
     )
+    parser.add_argument(
+        "--multi-version",
+        action="store_true",
+        dest="multi_version",
+        help="print the last three versions (separated by newline) instead of only the latest.",
+    )
     return parser
 
 
@@ -388,17 +430,21 @@ def parse_arguments():
     parser = get_argumentparser()
     args = AttributeDict({key: value for key, value in vars(parser.parse_args()).items() if value is not None})
     args = AttributeDict()
-    for key, value_string in vars(parser.parse_args()).items():
-        if value_string is None:
+    for key, value in vars(parser.parse_args()).items():
+        if value is None:
             continue
-        values = tuple(value if value != "" else None for value in value_string.split(","))
+        elif not is_string(value):
+            args[key] = value
+            continue
+        value_string = value
+        values = tuple(v if v != "" else None for v in value_string.split(","))
         value_range = argument_to_value_count_range[key]
         if value_range[0] <= len(values) <= value_range[1]:
             args[key] = values
         else:
             raise InvalidArgumentCount('{:d} argument values are invalid for "{}"'.format(len(values), key))
 
-    if not any(arg in argument_to_function for arg, value in args.items()):
+    if not any(arg in argument_to_function for arg in args):
         print("Error: No action given", file=sys.stderr)
         parser.print_help(file=sys.stderr)
         sys.exit(1)
@@ -416,9 +462,9 @@ def main():
     args = parse_arguments()
     for arg, values in args.items():
         if arg in argument_to_function:
-            output = argument_to_function[arg](*values)
+            output = argument_to_function[arg](*values, multiple_versions=args.multi_version)
             if output is not None:
-                print(output)
+                print("\n".join(output))
                 was_successful = True
             break
     if was_successful:

@@ -75,8 +75,16 @@ function last_git_tag () {
     "${UPDATER_UTILS_DIR}/update_utils.py" --last-git-tag "$(IFS=, ; echo "$*")"
 }
 
+function last_git_tags () {
+    "${UPDATER_UTILS_DIR}/update_utils.py" --multi-version --last-git-tag "$(IFS=, ; echo "$*")"
+}
+
 function last_website_version () {
     "${UPDATER_UTILS_DIR}/update_utils.py" --last-website-version "$(IFS=, ; echo "$*")"
+}
+
+function last_website_versions () {
+    "${UPDATER_UTILS_DIR}/update_utils.py" --multi-version --last-website-version "$(IFS=, ; echo "$*")"
 }
 
 function create_version_script () {
