@@ -103,4 +103,38 @@ function create_version_script () {
     chmod +x "${SCRIPT_PATH}"
 }
 
+function find_installable_version () {
+    local prefix url_template versions version url installed_version
+
+    prefix="$1"
+    url_template="$2"
+    shift; shift
+
+    versions=( "$@" )
+
+    for version in "${versions[@]}"; do
+        eval "${prefix}_LATEST_VERSION=${version}"
+        eval "${prefix}_URL=${url_template}"
+        eval "url=\${${prefix}_URL}"
+        eval installed_version="\${${prefix}_INSTALLED_VERSION}"
+        if [[ "$(curl -s -o /dev/null -I -L -w "%{http_code}" "${url}")" -ne 200 ]]; then
+            continue
+        fi
+        if [[ "${installed_version}" != "${version}" ]]; then
+            UPDATE_CONDITION_OUTPUT="v${installed_version} -> v${version}"
+            return 0
+        else
+            if [[ "${version}" == "${versions[1]}" ]]; then
+                UPDATE_CONDITION_OUTPUT="v${installed_version} is already the newest version"
+            else
+                UPDATE_CONDITION_OUTPUT="v${installed_version} is already the newest installable version"
+            fi
+            return 1
+        fi
+    done
+    # No version was suitable -> abort
+    UPDATE_CONDITION_OUTPUT="No installable version found!"
+    return 1
+}
+
 # vim: ft=zsh:tw=120
