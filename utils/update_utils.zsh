@@ -104,7 +104,7 @@ function create_version_script () {
 }
 
 function find_installable_version () {
-    local prefix url_template versions version url installed_version
+    local prefix url_template versions version url installed_version http_code
 
     prefix="$1"
     url_template="$2"
@@ -117,7 +117,12 @@ function find_installable_version () {
         eval "${prefix}_URL=${url_template}"
         eval "url=\${${prefix}_URL}"
         eval installed_version="\${${prefix}_INSTALLED_VERSION}"
-        if [[ "$(curl -s -o /dev/null -I -L -w "%{http_code}" "${url}")" -ne 200 ]]; then
+        http_code="$(curl -s -o /dev/null -I -L -w "%{http_code}" "${url}")"
+        # Deal with web servers which do not support head requests...
+        if [[ "${http_code}" -eq 403 ]]; then
+            http_code="$(curl -s -o /dev/null -L -w "%{http_code}" "${url}")"
+        fi
+        if [[ "${http_code}" -ne 200 ]]; then
             continue
         fi
         if [[ "${installed_version}" != "${version}" ]]; then
