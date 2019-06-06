@@ -183,4 +183,20 @@ function find_installable_version () {
     return 1
 }
 
+function compare_installed_and_latest_version () {
+    local prefix installed_version latest_version
+
+    prefix="$1"
+    eval installed_version="\${${prefix}_INSTALLED_VERSION}"
+    eval latest_version="\${${prefix}_LATEST_VERSION}"
+    if [[ ! "${latest_version}" =~ ^[A-Fa-f0-9]+$ || ! "${latest_version}" =~ ^${installed_version} ]] && \
+       [[ "${latest_version}" =~ ^[A-Fa-f0-9]+$ || "${latest_version}" != "${installed_version}" ]]; then
+        UPDATE_CONDITION_OUTPUT="v${installed_version} -> v${latest_version}"
+        return 0
+    else
+        UPDATE_CONDITION_OUTPUT="v${installed_version} is already the newest version"
+        return 1
+    fi
+}
+
 # vim: ft=zsh:tw=120
