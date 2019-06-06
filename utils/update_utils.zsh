@@ -112,6 +112,37 @@ function create_version_script () {
     chmod +x "${SCRIPT_PATH}"
 }
 
+function query_installed_version () {
+    local prefix version_query_command command_name
+
+    prefix="$1"
+    version_query_command="$2"
+    command_name="${version_query_command%% *}"
+
+    if command which "${command_name}" >/dev/null 2>&1; then
+        eval "${prefix}_INSTALLED_VERSION=$(eval ${version_query_command})"
+    else
+        eval "${prefix}_INSTALLED_VERSION=(none)"
+    fi
+}
+
+function query_version_script () {
+    local prefix command_name
+
+    prefix="$1"
+    command_name="$2"
+
+    if [[ -z "${command_name}" ]]; then
+        command_name="$(echo "${prefix}" | awk '{ print tolower($0) }')"
+    fi
+
+    if command which "${command_name}" >/dev/null 2>&1 && command which "${command_name}-version" >/dev/null 2>&1; then
+        eval "${prefix}_INSTALLED_VERSION=$(${command_name}-version)"
+    else
+        eval "${prefix}_INSTALLED_VERSION=(none)"
+    fi
+}
+
 function find_installable_version () {
     local prefix url_template versions version url installed_version http_code
 
