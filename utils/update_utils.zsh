@@ -165,7 +165,8 @@ function find_installable_version () {
         if ! is_in_array "${http_code}" 200 301 302 303 305 307 308; then
             continue
         fi
-        if [[ "${installed_version}" != "${version}" ]]; then
+        if [[ ! "${version}" =~ ^[A-Fa-f0-9]+$ || ! "${version}" =~ ^${installed_version} ]] && \
+           [[ "${version}" =~ ^[A-Fa-f0-9]+$ || "${version}" != "${installed_version}" ]]; then
             UPDATE_CONDITION_OUTPUT="v${installed_version} -> v${version}"
             return 0
         else
