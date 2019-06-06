@@ -71,6 +71,15 @@ function is_function () {
     declare -f "$1" >/dev/null
 }
 
+function is_in_array () {
+    local elem array
+
+    elem="$1"
+    shift
+    array=( "$@" )
+    (( ${array[(I)${elem}]} ))
+}
+
 function last_git_tag () {
     "${UPDATER_UTILS_DIR}/update_utils.py" --last-git-tag "$(IFS=, ; echo "$*")"
 }
@@ -117,12 +126,12 @@ function find_installable_version () {
         eval "${prefix}_URL=${url_template}"
         eval "url=\${${prefix}_URL}"
         eval installed_version="\${${prefix}_INSTALLED_VERSION}"
-        http_code="$(curl -s -o /dev/null -I -L -w "%{http_code}" "${url}")"
+        http_code="$(curl -s -o /dev/null -I -w "%{http_code}" "${url}")"
         # Deal with web servers which do not support head requests...
         if [[ "${http_code}" -eq 403 ]]; then
-            http_code="$(curl -s -o /dev/null -L -w "%{http_code}" "${url}")"
+            http_code="$(curl -s -o /dev/null -w "%{http_code}" "${url}")"
         fi
-        if [[ "${http_code}" -ne 200 ]]; then
+        if ! is_in_array "${http_code}" 200 301 302 303 305 307 308; then
             continue
         fi
         if [[ "${installed_version}" != "${version}" ]]; then
