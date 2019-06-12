@@ -122,7 +122,7 @@ function query_installed_version () {
     if command which "${command_name}" >/dev/null 2>&1; then
         eval "${prefix}_INSTALLED_VERSION=$(eval ${version_query_command})"
     else
-        eval "${prefix}_INSTALLED_VERSION=(none)"
+        eval "${prefix}_INSTALLED_VERSION='(none)'"
     fi
 }
 
@@ -148,7 +148,7 @@ function query_version_script () {
             return
         fi
     fi
-    eval "${prefix}_INSTALLED_VERSION=(none)"
+    eval "${prefix}_INSTALLED_VERSION='(none)'"
 }
 
 function find_installable_version () {
