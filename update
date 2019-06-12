@@ -125,10 +125,11 @@ function run_update_script () (
 
     export UPDATE_TEMP="$(mktemp -d)"
     (
+        cd "${UPDATE_TEMP}" || return
         update_description
         if ! is_function "update_condition" || update_condition; then
             print_update "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
-            cd "${UPDATE_TEMP}" && update_run
+            update_run
             RET="$?"
             [[ "${RET}" -ne 0 ]] && print_abort "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_RUN_OUTPUT}"
             exit "${RET}"
