@@ -119,8 +119,15 @@ function read_update_order () {
 }
 
 function run_update_script () (
-    UPDATE_SCRIPT_PATH="${UPDATER_SCRIPTS_DIR}/scripts/$1"
+    local update_script
 
+    update_script="$1"
+    UPDATE_SCRIPT_PATH="${UPDATER_SCRIPTS_DIR}/scripts/${update_script}"
+
+    if ! [[ -r "${UPDATE_SCRIPT_PATH}" ]]; then
+        print_abort "script not readable" "Could not read the update script \"${update_script}\""
+        exit 1
+    fi
     source "${UPDATE_SCRIPT_PATH}"
 
     export UPDATE_TEMP="$(mktemp -d)"
