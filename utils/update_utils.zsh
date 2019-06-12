@@ -127,20 +127,28 @@ function query_installed_version () {
 }
 
 function query_version_script () {
-    local prefix command_name
+    local prefix command_name check_command_existence
 
     prefix="$1"
     command_name="$2"
+    check_command_existence="$3"
 
     if [[ -z "${command_name}" ]]; then
         command_name="$(echo "${prefix}" | awk '{ print tolower($0) }')"
     fi
-
-    if command which "${command_name}" >/dev/null 2>&1 && command which "${command_name}-version" >/dev/null 2>&1; then
-        eval "${prefix}_INSTALLED_VERSION=$(${command_name}-version)"
+    if [[ -z "${check_command_existence}" ]] || is_in_array "${check_command_existence}" "ON" "on" "TRUE" "true"; then
+        check_command_existence="1"
     else
-        eval "${prefix}_INSTALLED_VERSION=(none)"
+        check_command_existence="0"
     fi
+
+    if ! (( check_command_existence )) || command which "${command_name}" >/dev/null 2>&1; then
+        if command which "${command_name}-version" >/dev/null 2>&1; then
+            eval "${prefix}_INSTALLED_VERSION=$(${command_name}-version)"
+            return
+        fi
+    fi
+    eval "${prefix}_INSTALLED_VERSION=(none)"
 }
 
 function find_installable_version () {
