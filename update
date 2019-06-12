@@ -119,16 +119,24 @@ function read_update_order () {
 }
 
 function run_update_script () (
-    UPDATE_SCRIPT_PATH="${UPDATER_SCRIPTS_DIR}/scripts/$1"
+    local update_script
 
+    update_script="$1"
+    UPDATE_SCRIPT_PATH="${UPDATER_SCRIPTS_DIR}/scripts/${update_script}"
+
+    if ! [[ -r "${UPDATE_SCRIPT_PATH}" ]]; then
+        print_abort "script not readable" "Could not read the update script \"${update_script}\""
+        exit 1
+    fi
     source "${UPDATE_SCRIPT_PATH}"
 
     export UPDATE_TEMP="$(mktemp -d)"
     (
+        cd "${UPDATE_TEMP}" || return
         update_description
         if ! is_function "update_condition" || update_condition; then
             print_update "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
-            cd "${UPDATE_TEMP}" && update_run
+            update_run
             RET="$?"
             [[ "${RET}" -ne 0 ]] && print_abort "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_RUN_OUTPUT}"
             exit "${RET}"

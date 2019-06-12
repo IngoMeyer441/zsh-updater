@@ -21,7 +21,7 @@ function print_summary () {
         printf -- '=%.0s' {1..70}
         printf -- "\n"
         for (( i = 1; i <= ${#PRINTED_MESSAGES}; i += 3 )); do
-            eval "print_${PRINTED_MESSAGES[${i}]}" \"${PRINTED_MESSAGES[$(( i + 1 ))]}\" \"${PRINTED_MESSAGES[$(( i + 2 ))]}\" \"false\"
+            eval "print_${PRINTED_MESSAGES[${i}]}" "\"\${PRINTED_MESSAGES[$(( i + 1 ))]}\"" "\"\${PRINTED_MESSAGES[$(( i + 2 ))]}\"" "\"false\""
         done
     fi
     rm -f "${PRINTED_MESSAGES_LOG_FILE}"
