@@ -170,7 +170,8 @@ function find_installable_version () {
         if [[ "${http_code}" -eq 403 ]]; then
             http_code="$(curl -s -o /dev/null -w "%{http_code}" "${url}")"
         fi
-        if ! is_in_array "${http_code}" 200 301 302 303 305 307 308; then
+        # 226 and 350 are FTP status codes
+        if ! is_in_array "${http_code}" 200 301 302 303 305 307 308 226 350; then
             continue
         fi
         if [[ ! "${version}" =~ ^[A-Fa-f0-9]+$ || ! "${version}" =~ ^${installed_version} ]] && \
