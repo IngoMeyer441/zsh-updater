@@ -35,12 +35,35 @@ function read_options () {
 }
 
 function init_variables () {
+    local linux_distro_detail linux_distro_details
+    typeset -A MACOS_CODENAMES
+
     export UPDATER_RC_PATH="${HOME}/.zsh-updaterrc"
     export UPDATER_SCRIPTS_DIR="${UPDATER_ROOT_DIR}/update_scripts"
     export UPDATER_UTILS_DIR="${UPDATER_ROOT_DIR}/utils"
     export UPDATE_ORDER_PATH="${UPDATER_SCRIPTS_DIR}/update_order"
     export UPDATE_EXTRA_DEFINITIONS="${UPDATER_SCRIPTS_DIR}/extra_definitions.zsh"
     [[ -f "${UPDATER_RC_PATH}" ]] || export UPDATER_RC_PATH=""
+
+    MACOS_CODENAMES=( \
+        "0" "Cheetah" \
+        "1" "Puma" \
+        "2" "Jaguar" \
+        "3" "Panther" \
+        "4" "Tiger" \
+        "5" "Leopard" \
+        "6" "Snow Leopard" \
+        "7" "Lion" \
+        "8" "Mountain Lion" \
+        "9" "Mavericks" \
+        "10" "Yosemite" \
+        "11" "El Capitan" \
+        "12" "Sierra" \
+        "13" "High Sierra" \
+        "14" "Mojave" \
+        "15" "Catalina" \
+    )
+
     if [[ "$(uname)" == "Darwin" ]]; then
         export PLATFORM_MACOS=1
         export PLATFORM_LINUX=0
@@ -48,8 +71,15 @@ function init_variables () {
         export PLATFORM_MACOS=0
         export PLATFORM_LINUX=1
     fi
-    if (( ${PLATFORM_LINUX} )); then
+    if (( PLATFORM_MACOS )); then
+        export PLATFORM_MACOS_VERSION="$(sw_vers | awk '$1 == "ProductVersion:" { print $2 }')"
+        export PLATFORM_MACOS_MAJOR_VERSION="$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
+        export PLATFORM_MACOS_MINOR_VERSION="$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $2 }')"
+        export PLATFORM_DETAILS="${PLATFORM_MACOS_VERSION};${MACOS_CODENAMES[${PLATFORM_MACOS_MINOR_VERSION}]}"
+        export PLATFORM_DESCRIPTIVE_NAME="macOS ${PLATFORM_MACOS_VERSION} ${MACOS_CODENAMES[${PLATFORM_MACOS_MINOR_VERSION}]}"
+    elif (( ${PLATFORM_LINUX} )); then
         export PLATFORM_LINUX_DISTRO="unknown"
+        [[ -f "/etc/arch-release" ]] && export PLATFORM_LINUX_DISTRO="arch"
         [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="centos"
         [[ -f "/etc/debian_version" ]] && export PLATFORM_LINUX_DISTRO="debian"
         if uname -a | grep -q "Microsoft"; then
@@ -58,6 +88,12 @@ function init_variables () {
             export PLATFORM_LINUX_WSL=0
         fi
         case "${PLATFORM_LINUX_DISTRO}" in
+            arch)
+                export PLATFORM_LINUX_DISTRO_VERSION="$(lsb_release -r | awk '{ print $2 }')"
+                export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
+                export PLATFORM_LINUX_DISTRO_CODENAME="$(lsb_release -c | awk '{ print $2 }')"
+                export PLATFORM_DESCRIPTIVE_NAME="$(lsb_release -d | awk '{ print $2 }') ${PLATFORM_LINUX_DISTRO_VERSION} (${PLATFORM_LINUX_DISTRO_CODENAME})"
+                ;;
             centos)
                 if which lsb_release >/dev/null 2>&1; then
                     export PLATFORM_LINUX_DISTRO_VERSION="$(lsb_release -r | awk '{ print $2 }')"
@@ -72,17 +108,35 @@ function init_variables () {
                         export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="5"
                     fi
                 fi
+                export PLATFORM_DESCRIPTIVE_NAME="CentOS ${PLATFORM_LINUX_DISTRO_VERSION}"
                 ;;
             debian)
+                export PLATFORM_LINUX_DISTRO_VERSION="$(lsb_release -r | awk '{ print $2 }')"
+                export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
                 export PLATFORM_LINUX_DISTRO_CODENAME="$(lsb_release -c | awk '{ print $2 }')"
-                export PLATFORM_LINUX_DISTRO_BRANCH="$(lsb_release -r | awk '{ print $2 }')"
-                if [[ "${PLATFORM_LINUX_DISTRO_BRANCH}" == "10" ]]; then
-                    export PLATFORM_LINUX_DISTRO_BRANCH="testing"
+                if ! [[ "${PLATFORM_LINUX_DISTRO_MAJOR_VERSION}" =~ ^[0-9]+$ ]]; then
+                    export PLATFORM_LINUX_DISTRO_BRANCH="${PLATFORM_LINUX_DISTRO_VERSION}"
                 fi
+                export PLATFORM_DESCRIPTIVE_NAME="Debian ${PLATFORM_LINUX_DISTRO_VERSION} (${PLATFORM_LINUX_DISTRO_CODENAME})"
                 ;;
             *)
                 ;;
         esac
+        linux_distro_details=( "${PLATFORM_LINUX_DISTRO_VERSION}" "${PLATFORM_LINUX_DISTRO_MAJOR_VERSION}" \
+                               "${PLATFORM_LINUX_DISTRO_CODENAME}" "${PLATFORM_LINUX_DISTRO_BRANCH}" )
+        for linux_distro_detail in "${linux_distro_details[@]}"; do
+            [[ -n "${linux_distro_detail}" ]] || continue;
+            if [[ -z "${PLATFORM_DETAILS}" ]]; then
+                PLATFORM_DETAILS="${linux_distro_detail}"
+            else
+                PLATFORM_DETAILS="${PLATFORM_DETAILS};${linux_distro_detail}"
+            fi
+        done
+        if (( PLATFORM_LINUX_WSL )); then
+            PLATFORM_DETAILS="${PLATFORM_DETAILS};wsl"
+            export PLATFORM_DESCRIPTIVE_NAME="${PLATFORM_DESCRIPTIVE_NAME} (wsl)"
+        fi
+        export PLATFORM_DETAILS
     fi
 
     [[ -n "${UPDATER_RC_PATH}" ]] && source "${UPDATER_RC_PATH}"

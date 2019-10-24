@@ -208,4 +208,59 @@ function compare_installed_and_latest_version () {
     fi
 }
 
+function is_any_os () {
+    local used_os_details os_entries os_name os_details os_detail os_matches
+
+    used_os_details=("${(@s/;/)PLATFORM_DETAILS}")
+
+    os_entries="$(IFS=','; echo "$*")"
+    os_entries="${os_entries:l:gs/ /}"  # convert to lowercase and remove all spaces
+    while [[ -n "${os_entries}" ]]; do
+        if ! [[ "${os_entries}" =~ '^(([[:alnum:]]+)(\[([[:alnum:],]+)\])?)(,|$)' ]]; then
+            >&2 echo "The argument \"${os_entries}\" has an invalid format."
+            return 1
+        fi
+        os_entries="${os_entries:${#MATCH}}"
+        os_name="${match[2]}"
+        os_details="${match[4]}"
+        if (( PLATFORM_MACOS )); then
+            [[ "${os_name}" == "macos" ]] || continue
+        elif (( PLATFORM_LINUX )); then
+            [[ "${os_name}" == "linux" || "${os_name}" == "${PLATFORM_LINUX_DISTRO}" ]] || continue
+        fi
+        os_matches=1
+        if [[ -n "${os_details}" ]]; then
+            while IFS= read -r os_detail; do
+                if ! (($used_os_details[(Ie)${os_detail}])); then
+                    os_matches=0
+                    break
+                fi
+            done < <(tr -s ',' '\n' <<< "${os_details}")
+        fi
+        if (( os_matches )); then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+function continue_if_any_os () {
+    if ! is_any_os "$@"; then
+        UPDATE_CONDITION_OUTPUT="Your OS is ${PLATFORM_DESCRIPTIVE_NAME}"
+        return 1
+    fi
+
+    return 0
+}
+
+function skip_if_any_os () {
+    if is_any_os "$@"; then
+        UPDATE_CONDITION_OUTPUT="Your OS is ${PLATFORM_DESCRIPTIVE_NAME}"
+        return 1
+    fi
+
+    return 0
+}
+
 # vim: ft=zsh:tw=120
