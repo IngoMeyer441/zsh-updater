@@ -263,7 +263,9 @@ class VersionQuery(object):
         if url_to_verify is not None:
             sort_key = url_verifier(sort_key, url_to_verify)
         search_pattern = "refs/tags/{}".format(tag_pattern)
-        all_tags = subprocess.check_output(("git", "ls-remote", "--tags", repo_url)).splitlines()
+        all_tags = subprocess.check_output(
+            ("git", "ls-remote", "--tags", repo_url), universal_newlines=True
+        ).splitlines()
         filtered_tags = []  # type: List[VersionMatch]
         for tag in all_tags:
             match_obj = re.search(search_pattern, tag)
