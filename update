@@ -188,14 +188,18 @@ function run_update_script () (
     (
         cd "${UPDATE_TEMP}" || return
         update_description
-        if ! is_function "update_condition" || update_condition; then
+        if ! is_function "update_condition" || { update_condition; RET="$?"; [[ "${RET}" -eq 0 ]]; }; then
             print_update "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
             update_run
             RET="$?"
             [[ "${RET}" -ne 0 ]] && print_abort "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_RUN_OUTPUT}"
             exit "${RET}"
         else
-            print_skip "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
+            if [[ "${RET}" -eq 1 ]]; then
+                print_skip "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
+            else
+                print_abort "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
+            fi
             exit
         fi
     )

@@ -189,7 +189,7 @@ function find_installable_version () {
     done
     # No version was suitable -> abort
     UPDATE_CONDITION_OUTPUT="No installable version found!"
-    return 1
+    return 2
 }
 
 function compare_installed_and_latest_version () {
