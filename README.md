@@ -35,7 +35,7 @@ pip install requests pyquery
 
 ### Using zplug
 
-1. Add `zplug "IngoHeimbach/zsh-updater"` to your `.zshrc`.
+1. Add `zplug "IngoMeyer441/zsh-updater"` to your `.zshrc`.
 
 2. Run
 
