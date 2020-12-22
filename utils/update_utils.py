@@ -105,6 +105,8 @@ def default_sort_key(elem):
     """Transform version strings to int tuples for better comparison.
 
     The function handles version strings of the type ``major.minor(.revision)``.
+    It returns an empty tuple if ``elem.groups`` is empty, so sorting will be disabled effectively. ``min`` and ``max``
+    functions will return the first element in this case.
 
     :param elem: version string
     :type elem: VersionMatch
