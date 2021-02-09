@@ -2,6 +2,13 @@
 
 export UPDATER_ROOT_DIR="${0:h}"
 
+function cleanup () {
+    if [[ -n "${UPDATER_TMP_DIR}" ]]; then
+        rm -rf "${UPDATER_TMP_DIR}"
+    fi
+    exit
+}
+trap cleanup EXIT INT TERM
 
 function print_usage () {
     echo "Usage: update [-a] script1 [script2 ... scriptN]"
@@ -43,6 +50,7 @@ function init_variables () {
     export UPDATER_UTILS_DIR="${UPDATER_ROOT_DIR}/utils"
     export UPDATE_ORDER_PATH="${UPDATER_SCRIPTS_DIR}/update_order"
     export UPDATE_EXTRA_DEFINITIONS="${UPDATER_SCRIPTS_DIR}/extra_definitions.zsh"
+    export UPDATER_TMP_DIR="$(mktemp -d)"
     [[ -f "${UPDATER_RC_PATH}" ]] || export UPDATER_RC_PATH=""
 
     MACOS_CODENAMES=( \
@@ -186,9 +194,10 @@ function run_update_script () (
     fi
     source "${UPDATE_SCRIPT_PATH}"
 
-    export UPDATE_TEMP="$(mktemp -d)"
+    export UPDATE_RUN_TMP_DIR="${UPDATER_TMP_DIR}/update_run_tmp"
+    mkdir -p "${UPDATE_RUN_TMP_DIR}" && \
     (
-        cd "${UPDATE_TEMP}" || return
+        cd "${UPDATE_RUN_TMP_DIR}" || return
         update_description
         if ! is_function "update_condition" || { update_condition; RET="$?"; [[ "${RET}" -eq 0 ]]; }; then
             print_update "${UPDATE_DESCRIPTION_OUTPUT}" "${UPDATE_CONDITION_OUTPUT}"
@@ -206,7 +215,7 @@ function run_update_script () (
         fi
     )
     RET="$?"
-    rm -rf "${UPDATE_TEMP}"
+    rm -rf "${UPDATE_RUN_TMP_DIR}"
     exit "${RET}"
 )
 
