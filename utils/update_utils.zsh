@@ -6,7 +6,7 @@ export BOLD_LIGHT_MAGENTA='\033[95;1m'
 export BOLD_LIGHT_CYAN='\033[96;1m'
 export NC='\033[0m'
 
-export PRINTED_MESSAGES_LOG_FILE="$(mktemp)"
+export PRINTED_MESSAGES_LOG_FILE="${UPDATER_TMP_DIR}/log"
 
 
 function add_entry_to_printed_messages () {
@@ -24,7 +24,6 @@ function print_summary () {
             eval "print_${PRINTED_MESSAGES[${i}]}" "\"\${PRINTED_MESSAGES[$(( i + 1 ))]}\"" "\"\${PRINTED_MESSAGES[$(( i + 2 ))]}\"" "\"false\""
         done
     fi
-    rm -f "${PRINTED_MESSAGES_LOG_FILE}"
 }
 
 function print_update () {
