@@ -88,7 +88,7 @@ function init_variables () {
     elif (( ${PLATFORM_LINUX} )); then
         export PLATFORM_LINUX_DISTRO="unknown"
         [[ -f "/etc/arch-release" ]] && export PLATFORM_LINUX_DISTRO="arch"
-        [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="centos"
+        [[ -f "/etc/redhat-release" ]] && export PLATFORM_LINUX_DISTRO="redhat"
         [[ -f "/etc/debian_version" ]] && export PLATFORM_LINUX_DISTRO="debian"
         if uname -a | grep -q "Microsoft"; then
             export PLATFORM_LINUX_WSL=1
@@ -102,10 +102,11 @@ function init_variables () {
                 export PLATFORM_LINUX_DISTRO_CODENAME="$(lsb_release -c | awk '{ print $2 }')"
                 export PLATFORM_DESCRIPTIVE_NAME="$(lsb_release -d | awk '{ print $2 }') ${PLATFORM_LINUX_DISTRO_VERSION} (${PLATFORM_LINUX_DISTRO_CODENAME})"
                 ;;
-            centos)
+            redhat)
                 if which lsb_release >/dev/null 2>&1; then
                     export PLATFORM_LINUX_DISTRO_VERSION="$(lsb_release -r | awk '{ print $2 }')"
                     export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
+                    export PLATFORM_LINUX_DISTRO_NAME="$(lsb_release -d | awk '{ print $2 }')"
                 else
                     export PLATFORM_LINUX_DISTRO_VERSION="$(sed 's/[^0-9.]*//g' /etc/redhat-release)"
                     if [[ "${PLATFORM_LINUX_DISTRO_VERSION}" > "8" ]]; then
@@ -117,8 +118,9 @@ function init_variables () {
                     else
                         export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="5"
                     fi
+                    export PLATFORM_LINUX_DISTRO_NAME="$(awk '{ print $1 }' /etc/redhat-release)"
                 fi
-                export PLATFORM_DESCRIPTIVE_NAME="CentOS ${PLATFORM_LINUX_DISTRO_VERSION}"
+                export PLATFORM_DESCRIPTIVE_NAME="${PLATFORM_LINUX_DISTRO_NAME} ${PLATFORM_LINUX_DISTRO_VERSION}"
                 ;;
             debian)
                 export PLATFORM_LINUX_DISTRO_VERSION="$(lsb_release -r | awk '{ print $2 }')"
