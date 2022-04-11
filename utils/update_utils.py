@@ -359,9 +359,9 @@ class VersionQuery(object):
         response_pq = PyQuery(response.text)
         version_html_tags_pq = response_pq.find(selector)
         if attribute is not None:
-            version_texts = [html_tag.attrib[attribute] for html_tag in version_html_tags_pq]
+            version_texts = [html_tag.attrib[attribute].strip() for html_tag in version_html_tags_pq]
         else:
-            version_texts = [html_tag.text for html_tag in version_html_tags_pq]
+            version_texts = [html_tag.text.strip() for html_tag in version_html_tags_pq]
         filtered_versions = []  # type: List[VersionMatch]
         for version_text in version_texts:
             # assume that ``version_text`` can be a path (or url)
