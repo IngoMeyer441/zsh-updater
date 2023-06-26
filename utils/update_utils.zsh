@@ -164,13 +164,13 @@ function find_installable_version () {
         eval "${prefix}_URL=${url_template}"
         eval "url=\${${prefix}_URL}"
         eval installed_version="\${${prefix}_INSTALLED_VERSION}"
-        http_code="$(curl -s -o /dev/null -I -w "%{http_code}" "${url}")"
+        http_code="$(curl -s -o /dev/null -I -L -w "%{http_code}" "${url}")"
         # Deal with web servers which do not support head requests...
         if [[ "${http_code}" -eq 403 ]]; then
-            http_code="$(curl -s -o /dev/null -w "%{http_code}" "${url}")"
+            http_code="$(curl -s -o /dev/null -L -w "%{http_code}" "${url}")"
         fi
         # 226 and 350 are FTP status codes
-        if ! is_in_array "${http_code}" 200 301 302 303 305 307 308 226 350; then
+        if ! is_in_array "${http_code}" 200 226 350; then
             continue
         fi
         if [[ ! "${version}" =~ ^[A-Fa-f0-9]+$ || ! "${version}" =~ ^${installed_version} ]] && \
