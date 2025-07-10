@@ -108,14 +108,16 @@ function init_variables () {
                     export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="$(echo "${PLATFORM_LINUX_DISTRO_VERSION}" | awk -F'.' '{ print $1 }')"
                     export PLATFORM_LINUX_DISTRO_NAME="$(lsb_release -d | awk '{ print $2 }')"
                 else
-                    export PLATFORM_LINUX_DISTRO_VERSION="$(sed 's/[^0-9.]*//g' /etc/redhat-release)"
-                    if [[ "${PLATFORM_LINUX_DISTRO_VERSION}" > "9" ]]; then
+                    export PLATFORM_LINUX_DISTRO_VERSION="$(grep -Po '[0-9]+(?=\.)' /etc/redhat-release)"
+                    if (( PLATFORM_LINUX_DISTRO_VERSION == 10 )); then
+                        export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="10"
+                    elif (( PLATFORM_LINUX_DISTRO_VERSION == 9 )); then
                         export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="9"
-                    elif [[ "${PLATFORM_LINUX_DISTRO_VERSION}" > "8" ]]; then
+                    elif (( PLATFORM_LINUX_DISTRO_VERSION == 8 )); then
                         export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="8"
-                    elif [[ "${PLATFORM_LINUX_DISTRO_VERSION}" > "7" ]]; then
+                    elif (( PLATFORM_LINUX_DISTRO_VERSION == 7 )); then
                         export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="7"
-                    elif [[ "${PLATFORM_LINUX_DISTRO_VERSION}" > "6" ]]; then
+                    elif (( PLATFORM_LINUX_DISTRO_VERSION == 6 )); then
                         export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="6"
                     else
                         export PLATFORM_LINUX_DISTRO_MAJOR_VERSION="5"
